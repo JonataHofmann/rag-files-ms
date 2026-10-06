@@ -1,0 +1,44 @@
+variables:
+  appName: $(Build.Repository.Name)
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+trigger:
+  paths:
+    exclude:
+      - README.md
+  branches:
+    include:
+      - main
+      - staging
+      - release
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Profissionais SA/azure-pipelines-templates
+
+stages:
+  - stage: PRE_BUILD
+    displayName: 'Build artifact'
+    jobs:
+      - job: preBuildApp
+        workspace:
+          clean: all
+        steps:
+          - template: common/generate-tag-backup.yml@templates
+
+  - stage: BUILD
+    dependsOn: PRE_BUILD
+    displayName: 'Build artifact'
+    jobs:
+      - job: buildApp
+        workspace:
+          clean: all
+        steps:
+          - template: common/setup-feed-psa.yml@templates
+          - template: common/setup-npm20.yml@templates
+          - template: common/build-node.yml@templates
+          - template: common/build-k8s-docker.yml@templates
